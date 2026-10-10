@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guard Dog Diary</title>
+<style>
+:root{--paper:#f6ecd6;--ink:#4a3b2a;--soft:#6b5b40;--card:#fffdf6;--line:#c9a878;--shadow:#d9c79c;--red:#c93a3a;--sea:#cfe3d4;--sea2:#8fb59b;--yellow:#ffd66b;--green:#2f8f5b}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);background-image:radial-gradient(#e6d6b0 1px,transparent 1px);background-size:14px 14px;color:var(--ink);font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.55;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #2b6fd6;outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding:14px 14px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{font-size:30px;background:#fff;border-radius:50%;width:52px;height:52px;display:grid;place-items:center;box-shadow:0 0 0 3px #fff,0 3px 0 3px var(--shadow);transform:rotate(5deg)}
+h1{margin:0;font-size:1.25rem;background:#fff;padding:4px 12px;border-radius:6px;box-shadow:0 3px 0 var(--shadow);transform:rotate(-1.5deg);display:inline-block}
+.tag{margin:6px 0 0 4px;font-size:.8rem;color:var(--soft)}
+.lang{display:flex;background:#fff;border-radius:20px;box-shadow:0 2px 0 var(--shadow);padding:3px;border:1px solid var(--line)}
+.lang button{border:0;background:transparent;border-radius:16px;padding:5px 12px;font-size:.85rem;font-weight:700}
+.lang button[aria-pressed=true]{background:var(--ink);color:#fff}
+.tabs{display:flex;gap:8px;margin:16px 0 14px;flex-wrap:wrap}
+.tab{border:2px dashed var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:700;box-shadow:0 3px 0 var(--shadow)}
+.tab:nth-child(1){transform:rotate(-1deg)}.tab:nth-child(2){transform:rotate(1deg)}.tab:nth-child(3){transform:rotate(-.6deg)}
+.tab[aria-selected=true]{background:var(--yellow);border-style:solid;border-color:#d9a93a}
+.view{display:none}.view.on{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.statbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:10px 12px;box-shadow:3px 4px 0 #e3d3b0;margin-bottom:14px}
+.chip{background:var(--yellow);color:#5c3f00;border-radius:20px;padding:3px 12px;font-weight:800;font-size:.9rem}
+.bar{flex:1;min-width:120px}
+.bar .track{height:12px;border-radius:8px;background:#eadcb9;overflow:hidden;border:1px solid var(--line)}
+.bar .fill{height:100%;background:repeating-linear-gradient(45deg,#e8574f 0 8px,#f08a6e 8px 16px);transition:width .6s}
+.bar small{font-size:.75rem;color:var(--soft)}
+.zc{font-size:.85rem;font-weight:700;background:#fff;border-radius:8px;padding:3px 10px;box-shadow:0 2px 0 var(--shadow)}
+.grid{display:grid;gap:16px}
+@media(min-width:820px){.grid{grid-template-columns:1.4fr 1fr;align-items:start}}
+.mapcard{position:relative;background:var(--card);border-radius:14px;padding:30px 12px 12px;box-shadow:3px 4px 0 #e3d3b0;border:2px dashed var(--line)}
+.mapcard .lbl{position:absolute;top:-12px;left:14px;font-size:.85rem;font-weight:800;transform:rotate(-2deg);background:#fff;padding:3px 10px;border-radius:4px;box-shadow:0 2px 0 var(--shadow)}
+#map{position:relative;aspect-ratio:400/220;background:var(--sea);border:2px dashed var(--sea2);border-radius:12px;overflow:hidden}
+#map svg{position:absolute;inset:0;width:100%;height:100%}
+.dot{position:absolute;transform:translate(-50%,-50%) rotate(var(--r,0deg));width:34px;height:34px;border-radius:50%;border:0;background:#fff;font-size:17px;line-height:1;display:grid;place-items:center;box-shadow:0 0 0 2px #fff,0 2px 4px rgba(0,0,0,.3);padding:0;z-index:2}
+@media(min-width:560px){.dot{width:40px;height:40px;font-size:20px}}
+.dot.new{animation:pulse 1.6s infinite;box-shadow:0 0 0 2px #fff,0 0 0 5px rgba(232,87,79,.55)}
+.dot.watch{box-shadow:0 0 0 2px #fff,0 0 0 4px #f0a830}
+.dot.fix{box-shadow:0 0 0 2px #fff,0 0 0 4px #4caf7a}
+.dot.sel{outline:3px solid #2b6fd6}
+.dot .bd{position:absolute;right:-6px;bottom:-6px;font-style:normal;font-size:11px;background:#fff;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+@keyframes pulse{50%{box-shadow:0 0 0 2px #fff,0 0 0 10px rgba(232,87,79,0)}}
+#dog{position:absolute;z-index:4;transform:translate(-50%,-50%);width:42px;height:42px;transition:left 1.8s ease-in-out,top 1.8s ease-in-out;pointer-events:none}
+#dog .in{display:block;width:100%;height:100%;background:#fff;border-radius:50%;font-size:24px;line-height:42px;text-align:center;box-shadow:0 0 0 3px #fff,0 3px 6px rgba(0,0,0,.35);position:relative}
+#dog .in i{position:absolute;right:-6px;bottom:-4px;font-style:normal;font-size:16px;line-height:1}
+#dog.run .in{animation:bob .35s infinite alternate}
+@keyframes bob{from{transform:translateY(-3px) rotate(-8deg)}to{transform:translateY(3px) rotate(8deg)}}
+.home{position:absolute;left:8.5%;top:89%;transform:translate(-50%,-50%);font-size:20px;z-index:1}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.btn{border:2px solid var(--ink);background:#fff;border-radius:22px;padding:9px 18px;font-weight:800;box-shadow:0 3px 0 var(--ink);transition:transform .1s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.primary{background:var(--green);color:#fff;border-color:#1e6b41;box-shadow:0 3px 0 #1e6b41}
+.btn:disabled{opacity:.55;cursor:default}
+.sel-wrap{display:flex;flex-direction:column;font-size:.75rem;color:var(--soft)}
+select{font:inherit;padding:6px 8px;border-radius:8px;border:2px solid var(--line);background:#fff;color:var(--ink)}
+.bubble{background:#fff;border-radius:16px;padding:12px 14px 12px 60px;position:relative;box-shadow:0 3px 0 var(--shadow);border:2px solid var(--line);min-height:62px}
+.bubble:before{content:"🐶";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:28px;background:#fffdf6;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.25)}
+.report{margin-top:14px;background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:14px;box-shadow:3px 4px 0 #e3d3b0;transform:rotate(.6deg)}
+.report.alert{animation:pop .4s}
+@keyframes pop{from{transform:scale(.95) rotate(-2deg)}to{transform:rotate(.6deg)}}
+.rhead{display:flex;gap:12px;align-items:center}
+.stk{font-size:34px;background:#fff;border-radius:50%;width:58px;height:58px;display:grid;place-items:center;box-shadow:0 0 0 3px #fff,0 2px 6px rgba(0,0,0,.25);flex:none}
+.report h2,.zd h2{margin:0;font-size:1.05rem}
+.urg{display:inline-block;border-radius:12px;padding:1px 10px;font-size:.78rem;font-weight:800;margin-top:3px}
+.u-high{background:#ffd9d9;color:#8f1d1d}.u-mid{background:#ffe9bf;color:#7a4a00}.u-low{background:#d6efdc;color:#1f5c38}
+.report dl{margin:10px 0 0}.report dt{font-weight:800;font-size:.82rem;color:var(--soft);margin-top:8px}.report dd{margin:0;font-size:.92rem}
+.btns{display:flex;gap:10px;margin-top:14px}.btns .btn{flex:1;padding:10px 8px}
+.muted{color:var(--soft);font-size:.9rem}
+.news{margin-top:14px;background:#fff6c9;border-radius:6px;padding:12px 12px 10px;box-shadow:2px 3px 0 #e6d48a;transform:rotate(-.8deg);position:relative}
+.news h3{margin:0 0 4px;font-size:.85rem}.news p{margin:0 0 8px;font-size:.9rem}
+.news .btn{padding:5px 12px;font-size:.82rem;box-shadow:0 2px 0 var(--ink)}
+h2.sec{font-size:1.15rem;margin:0 0 4px}
+.zgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+@media(min-width:560px){.zgrid{grid-template-columns:repeat(4,1fr)}}
+.slot{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:12px 6px 8px;text-align:center;box-shadow:2px 3px 0 #e3d3b0;position:relative}
+.slot:nth-child(3n+1){transform:rotate(-1.5deg)}.slot:nth-child(3n+2){transform:rotate(1deg)}.slot:nth-child(3n){transform:rotate(-.5deg)}
+.slot .stk{margin:0 auto;width:54px;height:54px;font-size:30px}
+.slot.lock .stk{background:#e9dfc6;color:#a59574;box-shadow:none;border:2px dashed var(--line)}
+.slot small{display:block;margin-top:6px;font-size:.72rem;font-weight:700;line-height:1.3}
+.slot.cur{outline:3px solid #2b6fd6}
+.slot .bd{position:absolute;top:6px;right:8px;font-size:15px}
+.zd{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:14px;box-shadow:3px 4px 0 #e3d3b0}
+.zd p{margin:6px 0}
+.pgrid{display:grid;gap:16px}
+@media(min-width:820px){.pgrid{grid-template-columns:1fr 1fr;align-items:start}}
+.card{background:var(--card);border:2px dashed var(--line);border-radius:12px;padding:18px;box-shadow:3px 4px 0 #e3d3b0;text-align:center}
+.dogbig{position:relative;display:inline-block;width:130px;height:130px;line-height:130px;font-size:76px;background:#fff;border-radius:50%;box-shadow:0 0 0 5px #fff,0 3px 8px rgba(0,0,0,.25);margin-top:14px}
+.dogbig .a{position:absolute;line-height:1;animation:fade .5s}
+.a.band{bottom:-6px;right:-12px;font-size:40px}.a.gl{left:50%;top:32%;transform:translateX(-50%);font-size:44px}
+.a.crown{top:-26px;left:50%;transform:translateX(-50%) rotate(8deg);font-size:40px}
+.a.cape{bottom:-6px;left:-16px;font-size:38px}.a.head{top:-2px;left:-12px;font-size:34px;transform:rotate(-15deg)}
+.title-chip{display:inline-block;background:var(--yellow);color:#5c3f00;border-radius:20px;padding:4px 14px;font-weight:800;margin-top:20px}
+.rw{display:flex;justify-content:center;gap:10px;margin:14px 0 6px;flex-wrap:wrap}
+.rw div{text-align:center;font-size:.68rem;width:62px;line-height:1.25}
+.rw span{display:grid;place-items:center;margin:0 auto 4px;font-size:26px;background:#fff;border-radius:50%;width:48px;height:48px;box-shadow:0 0 0 3px #fff,0 2px 5px rgba(0,0,0,.2)}
+.rw .l span{opacity:.35;filter:grayscale(1)}
+.diary{list-style:none;margin:8px 0 0;padding:0;text-align:left;max-height:300px;overflow:auto}
+.diary li{padding:7px 4px;border-bottom:1px dotted var(--line);font-size:.88rem}
+.diary time{font-size:.75rem;color:var(--soft);margin-right:6px}
+.reset{margin-top:14px;background:transparent;border:1px dashed var(--soft);border-radius:16px;padding:6px 14px;font-size:.82rem;color:var(--soft)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,30px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:24px;font-weight:700;font-size:.9rem;opacity:0;transition:all .3s;pointer-events:none;max-width:92vw;text-align:center;z-index:50}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><div class="logo" aria-hidden="true">📒</div><div><h1>Guard Dog Diary</h1><div class="tag" data-i18n="tag"></div></div></div>
+  <div class="lang" data-demo="lang-switch" role="group" data-i18n-aria="langAria">
+    <button type="button" data-lang="ja" data-demo="lang-ja">日本語</button>
+    <button type="button" data-lang="en" data-demo="lang-en">EN</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tab="patrol" data-demo="tab-patrol" data-i18n="tabPatrol"></button>
+  <button class="tab" role="tab" data-tab="zukan" data-demo="tab-zukan" data-i18n="tabZukan"></button>
+  <button class="tab" role="tab" data-tab="pochi" data-demo="tab-pochi" data-i18n="tabPochi"></button>
+</nav>
+
+<main>
+<section id="view-patrol" class="view">
+  <div class="statbar" data-demo="status-bar">
+    <span class="chip" id="lvChip"></span>
+    <div class="bar"><div class="track"><div class="fill" id="xpFill"></div></div><small id="xpText"></small></div>
+    <span class="zc" id="zCount"></span>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="mapcard">
+        <span class="lbl" data-i18n="mapLabel"></span>
+        <div id="map" data-demo="world-map" role="group" data-i18n-aria="mapAria">
+          <svg viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+            <g stroke="#a9cdb4" stroke-width="1" stroke-dasharray="3 4"><path d="M0 55H400M0 110H400M0 165H400M100 0V220M200 0V220M300 0V220"/></g>
+            <g fill="#efe3bf" stroke="#b79b66" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round">
+              <path d="M30 40L80 25L120 35L125 60L105 85L90 100L70 90L45 70Z"/>
+              <path d="M95 110L125 108L135 135L120 175L105 185L95 150Z"/>
+              <path d="M185 40L225 32L240 48L215 62L190 58Z"/>
+              <path d="M190 70L235 68L250 100L235 150L210 155L195 115Z"/>
+              <path d="M245 35L330 28L368 55L345 92L300 102L270 88L250 62Z"/>
+              <path d="M320 135L365 130L372 155L340 165L322 152Z"/>
+            </g>
+            <line id="route" x1="0" y1="0" x2="0" y2="0" stroke="#c93a3a" stroke-width="2" stroke-dasharray="5 4" opacity="0"/>
+          </svg>
+          <span class="home" aria-hidden="true">🏠</span>
+          <div id="dots"></div>
+          <div id="dog"><span class="in"><span id="dogE">🐶</span><i>🧣</i></span></div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="btnPatrol" data-demo="patrol-toggle"></button>
+        <label class="sel-wrap"><span data-i18n="startLbl"></span>
+          <select id="startSel" data-demo="start-point"></select></label>
+      </div>
+    </div>
+    <div>
+      <div class="bubble" id="bubble" data-demo="pochi-says" aria-live="polite"></div>
+      <div class="report" id="report" data-demo="report-card"></div>
+      <div class="news" data-demo="news-card">
+        <h3 data-i18n="newsTitle"></h3>
+        <p id="newsText"></p>
+        <button class="btn" id="btnNews" data-demo="read-news"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="view-zukan" class="view">
+  <h2 class="sec" data-i18n="zTitle"></h2>
+  <div class="muted" data-i18n="zSub"></div>
+  <div class="zgrid" id="zgrid" data-demo="zukan-grid"></div>
+  <div class="zd" id="zdetail" data-demo="zukan-detail"></div>
+</section>
+
+<section id="view-pochi" class="view">
+  <div class="pgrid">
+    <div class="card" data-demo="pochi-card">
+      <div id="bigDog"></div>
+      <div><span class="title-chip" id="pTitle"></span></div>
+      <div class="muted" style="margin-top:8px" id="pSub"></div>
+      <div class="bar" style="margin:10px auto 0;max-width:260px"><div class="track"><div class="fill" id="xpFill2"></div></div><small id="xpText2"></small></div>
+      <div class="rw" id="rewards" data-demo="reward-stickers"></div>
+      <div class="muted" id="rwCount"></div>
+    </div>
+    <div class="card" style="text-align:left">
+      <h2 class="sec" data-i18n="dTitle"></h2>
+      <ul class="diary" id="diary" data-demo="diary-list"></ul>
+      <div style="text-align:center"><button class="reset" id="btnReset" data-demo="reset"></button></div>
+    </div>
+  </div>
+</section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+const I18N={
+ja:{
+title:"Guard Dog Diary｜番犬のパトロール手帳",tag:"番犬のパトロール手帳",langAria:"言語切りかえ",
+tabPatrol:"🗺️ パトロール",tabZukan:"📚 脅威図鑑",tabPochi:"🐶 ポチ",
+mapLabel:"📒 きょうのパトロール",mapAria:"世界マップ",
+lv:"Lv.{n}",xpLeft:"あと{n}XP",xpMax:"MAX！ 最強の番犬！",zCount:"図鑑 {a}/{b}",
+start:"▶ 見回りスタート",pause:"⏸ 一時停止",allDone:"✅ 全部見回り済み",
+startLbl:"スタート地点（任意）",startHome:"おまかせ（おうち）",
+bStart:"ワン！ ボクは見習い番犬のポチ。世界を見回って、悪いやつの手口を勉強するよ。▶を押してね！",
+bRun:"ワン！ {place}のほうで光が見えた。行ってくる！",
+bFound:"ワン！ 見つけたよ。報告するね！",
+bFixed:"えらい！ 対策できたね。ホワイトハッカーは「守るため」に攻撃を学ぶんだよ。+{xp}XP",
+bWatchHigh:"うーん、緊急度が高いから心配…。あとで図鑑から対策できるよ。+{xp}XP",
+bWatchLow:"OK、少し様子を見よう。気になったら図鑑から対策できるよ。+{xp}XP",
+bAllDone:"全部見回ったよ！ 図鑑をのぞいてみてね 📚 様子見のものは、あとで対策できるよ。",
+bPaused:"ひと休み…ワフ。また行きたくなったら▶を押してね。",
+bFirst:"先に今の報告にこたえてね！",bBusy:"いま走ってるから、ちょっと待ってね！",
+bNews:"勉強したよ！ 新しい手口を覚えた。+5XP",bTeleport:"{place}からスタート！ ワン！",
+rWhere:"📍 どこが問題？",rWhy:"🎓 ポチ先生のひとこと",rFix:"🛠️ 改善策",
+urgHigh:"🚨 緊急度 高",urgMid:"⚠️ 緊急度 中",urgLow:"🟢 緊急度 低",
+found:"{name} 発見",actFix:"🛡️ 対策する",actWatch:"👀 様子見",
+rEmpty:"まだ報告はないよ。ポチの見回りを待とう…（光る点をタップしてもOK）",
+rDone:"ぺたっ！「{name}」のシールを図鑑に貼ったよ（{status}）",
+stFix:"対策ずみ",stWatch:"様子見中",unknown:"未確認の光点",
+newsTitle:"📰 きょうの攻撃ニュース（シミュレーション）",newsBtn:"読んで学ぶ +5XP",newsDone:"きょうはぜんぶ読んだよ ✅",
+zTitle:"📚 脅威図鑑",zSub:"見つけた脅威がシールになって貼られるよ。タップでくわしく見られるよ。",
+zHint:"シールをタップしてみよう。",zLock:"まだ見つけていない脅威だよ。見回りで探そう！",zLockName:"？？？",
+zFixNow:"🛡️ 今から対策する +20XP",
+pTitle2:"{t} ポチ",pSub:"赤いバンダナがトレードマーク",rwCount:"ごほうびシール {a}/{b} ゲット！",rwLock:"Lv.{n}でゲット",
+dTitle:"📖 ポチの日誌",dEmpty:"まだ日誌は空っぽ。見回りに出かけよう！",dFix:"対策した",dWatch:"様子見にした",
+reset:"🗑️ はじめからやり直す",resetAsk:"もう一度押すとリセット",resetDone:"手帳をまっさらにしたよ。",
+toastLv:"🎉 Lv.{n}！ 新しいシール「{s}」をゲット！",toastXp:"+{xp}XP",
+lvTitle:["見習い番犬","パトロール犬","ヒーロー番犬","ベテラン番犬","番犬マスター"],
+stk:{band:"赤いバンダナ",gl:"サングラス",cape:"ヒーローマント",head:"ヘッドセット",crown:"王冠"},
+reg:{na:"北米",sa:"南米",eu:"ヨーロッパ",af:"アフリカ",as:"アジア",oc:"オセアニア"},
+news:["【ヨーロッパ】銀行をまねた偽メールが急増中","【アジア】荷物の不在通知をよそおう偽SMSが拡大","【北米】無料Wi-Fiにしかけた盗み見が報告される","【オセアニア】古いソフトの穴をねらう攻撃が増加","【南米】家族の声をまねる偽の電話が話題に"],
+th:{
+phish:{name:"フィッシング",place:"銀行そっくりの偽メールのリンク先",what:"本物そっくりの偽サイトで、IDやパスワードをだまし取る手口だよ。釣り針みたいに、クリックを待っているんだ。",fix:"メールのリンクは押さない。公式アプリやブックマークから直接ログインして確認しよう。"},
+malware:{name:"ウイルス（マルウェア）",place:"無料アプリの中にまぎれたファイル",what:"便利そうなアプリに隠れて、スマホやパソコンでこっそり悪さをするプログラムだよ。",fix:"公式ストア以外からアプリを入れない。セキュリティソフトで検査しよう。"},
+pass:{name:"パスワードの使い回し",place:"いろんなサービスで同じパスワード",what:"1か所から漏れると、ほかのサービスにも次々ログインされちゃうんだ（リスト型攻撃）。",fix:"サービスごとに違う長いパスワードにして、パスワード管理アプリを使おう。"},
+mfa:{name:"2段階認証なし",place:"ログイン画面（パスワードだけ）",what:"パスワードが盗まれても、2段階認証があればもう1つのカギで止められるよ。",fix:"設定で2段階認証をオン。認証アプリかSMSコードを使おう。"},
+wifi:{name:"偽の無料Wi-Fi",place:"カフェにある「Free_WiFi」という名前の電波",what:"本物のふりをしたWi-Fiにつなぐと、通信をのぞき見されることがあるよ。",fix:"お店の人に正しい名前を確認。大事なログインは公衆Wi-Fiでしない。"},
+ransom:{name:"ランサムウェア",place:"会社のファイルサーバー",what:"ファイルを勝手にロックして「お金を払えば開ける」とおどす攻撃だよ。",fix:"大事なデータは別の場所にバックアップ。あやしい添付ファイルは開かない。"},
+update:{name:"更新忘れのソフト",place:"古いバージョンのブラウザ",what:"ソフトの「穴」は更新で直るよ。更新しないと、穴を知っている悪い人にねらわれるんだ。",fix:"自動アップデートをオンにして、通知が来たら早めに更新しよう。"},
+sms:{name:"スミッシング（偽SMS）",place:"「不在通知」をよそおったSMSのURL",what:"宅配会社などになりすましたSMSで、偽サイトに誘導する手口だよ。",fix:"URLは押さず、公式アプリや公式サイトで配送状況を確認しよう。"},
+usb:{name:"拾ったUSBメモリ",place:"駐車場に落ちていたUSB",what:"つなぐだけでウイルスが動くことがあるよ。落とし物は罠かも。",fix:"知らないUSBはパソコンにささない。見つけたら管理者にわたそう。"},
+social:{name:"なりすまし電話",place:"「情報システム部です」という電話",what:"人の信じやすい心を利用して、パスワードなどを聞き出す手口（ソーシャルエンジニアリング）だよ。",fix:"いったん切って、公式の番号にかけ直す。パスワードは誰にも教えない。"},
+qr:{name:"偽のQRコード",place:"ポスターの上に貼られたQRシール",what:"本物のQRの上に偽のシールを貼って、悪いサイトへ誘導する手口だよ。",fix:"シールが貼り直されていないか確認。読み取ったあとのURLもチェックしよう。"},
+voice:{name:"偽の声（音声なりすまし）",place:"家族そっくりの声でかかってきた電話",what:"AIで声をまねして「お金が必要」とあわてさせる新しい手口だよ。",fix:"家族で合言葉を決めておく。まず本人の番号にかけ直そう。"}}
+},
+en:{
+title:"Guard Dog Diary – the patrol notebook",tag:"The guard dog's patrol notebook",langAria:"Language switch",
+tabPatrol:"🗺️ Patrol",tabZukan:"📚 Threat Book",tabPochi:"🐶 Pochi",
+mapLabel:"📒 Today's patrol",mapAria:"World map",
+lv:"Lv.{n}",xpLeft:"{n} XP to go",xpMax:"MAX! Top guard dog!",zCount:"Book {a}/{b}",
+start:"▶ Start patrol",pause:"⏸ Pause",allDone:"✅ All patrolled",
+startLbl:"Start point (optional)",startHome:"Auto (home)",
+bStart:"Woof! I'm Pochi, a trainee guard dog. I roam the world and learn how bad guys attack. Press ▶!",
+bRun:"Woof! I see a light near {place}. Running there!",
+bFound:"Woof! Found something. Here's my report!",
+bFixed:"Well done! You fixed it. White hat hackers learn attacks to protect people. +{xp} XP",
+bWatchHigh:"Hmm, it's urgent, so I'm worried… You can fix it later from the Threat Book. +{xp} XP",
+bWatchLow:"OK, let's watch it for a while. You can fix it later from the Threat Book. +{xp} XP",
+bAllDone:"I checked everywhere! Peek into the Threat Book 📚 Watched items can still be fixed later.",
+bPaused:"Taking a break… woof. Press ▶ when you want to go again.",
+bFirst:"Please answer this report first!",bBusy:"I'm running right now. One moment!",
+bNews:"Studied! I learned a new trick of the attackers. +5 XP",bTeleport:"Starting from {place}! Woof!",
+rWhere:"📍 Where is the problem?",rWhy:"🎓 Teacher Pochi says",rFix:"🛠️ How to fix",
+urgHigh:"🚨 Urgency: High",urgMid:"⚠️ Urgency: Medium",urgLow:"🟢 Urgency: Low",
+found:"{name} found",actFix:"🛡️ Fix it",actWatch:"👀 Watch",
+rEmpty:"No report yet. Pochi is out there… (You can also tap a glowing dot.)",
+rDone:"Peel & stick! The \"{name}\" sticker is in your book ({status}).",
+stFix:"Fixed",stWatch:"Watching",unknown:"Unknown signal",
+newsTitle:"📰 Today's attack news (simulated)",newsBtn:"Read & learn +5 XP",newsDone:"You read all of today's news ✅",
+zTitle:"📚 Threat Book",zSub:"Threats you find become stickers. Tap one to read more.",
+zHint:"Try tapping a sticker.",zLock:"You haven't found this threat yet. Go find it on patrol!",zLockName:"???",
+zFixNow:"🛡️ Fix it now +20 XP",
+pTitle2:"{t} Pochi",pSub:"The red bandana is his trademark",rwCount:"Reward stickers {a}/{b} collected!",rwLock:"Get at Lv.{n}",
+dTitle:"📖 Pochi's diary",dEmpty:"The diary is empty. Let's go on patrol!",dFix:"Fixed it",dWatch:"Chose to watch",
+reset:"🗑️ Start over",resetAsk:"Press again to reset",resetDone:"The notebook is fresh and clean.",
+toastLv:"🎉 Lv.{n}! New sticker: \"{s}\"!",toastXp:"+{xp} XP",
+lvTitle:["Trainee Guard Dog","Patrol Dog","Hero Guard Dog","Veteran Guard Dog","Guard Dog Master"],
+stk:{band:"Red bandana",gl:"Sunglasses",cape:"Hero cape",head:"Headset",crown:"Crown"},
+reg:{na:"North America",sa:"South America",eu:"Europe",af:"Africa",as:"Asia",oc:"Oceania"},
+news:["[Europe] Fake emails pretending to be banks are surging","[Asia] Fake delivery-notice text messages are spreading","[North America] Snooping through free Wi-Fi reported","[Oceania] Attacks on old, un-updated software are rising","[South America] Fake calls copying a family member's voice go viral"],
+th:{
+phish:{name:"Phishing",place:"Link in a fake email that looks like your bank",what:"A fake site that looks real and tricks you into giving away your ID and password. Like a fishing hook, it waits for your click.",fix:"Don't tap links in the email. Log in from the official app or your bookmark."},
+malware:{name:"Malware (virus)",place:"A file hidden inside a free app",what:"A program that hides in a handy-looking app and quietly does bad things to your phone or computer.",fix:"Only install apps from official stores. Scan with security software."},
+pass:{name:"Reused passwords",place:"The same password on many services",what:"If one site leaks it, attackers can log in to your other services too (credential stuffing).",fix:"Use a different long password for each service, and a password manager."},
+mfa:{name:"No 2-step login",place:"A login screen that needs only a password",what:"Even if your password is stolen, a second key (2-step verification) can stop the thief.",fix:"Turn on 2-step verification in settings. Use an authenticator app or SMS code."},
+wifi:{name:"Fake free Wi-Fi",place:"A signal named \"Free_WiFi\" in a café",what:"If you join a Wi-Fi that only pretends to be real, someone may peek at your traffic.",fix:"Ask the staff for the real network name. Don't log in to important accounts on public Wi-Fi."},
+ransom:{name:"Ransomware",place:"The company file server",what:"An attack that locks your files and says, \"Pay us and we'll unlock them.\"",fix:"Back up important data somewhere else. Don't open suspicious attachments."},
+update:{name:"Software not updated",place:"An old version of a web browser",what:"Updates fix \"holes\" in software. Without them, people who know the holes can attack you.",fix:"Turn on automatic updates and install them soon after the notice."},
+sms:{name:"Smishing (fake SMS)",place:"The link in a text pretending to be a delivery notice",what:"A text that pretends to be a delivery company and leads you to a fake site.",fix:"Don't tap the link. Check delivery status in the official app or site."},
+usb:{name:"A found USB stick",place:"A USB stick lying in a parking lot",what:"Some viruses start just by plugging in. A lost item may be a trap.",fix:"Never plug in an unknown USB stick. Hand it to an administrator."},
+social:{name:"Impostor phone call",place:"A call saying \"This is the IT department\"",what:"Attackers use your trust to get passwords out of you (social engineering).",fix:"Hang up and call back on the official number. Never tell anyone your password."},
+qr:{name:"Fake QR code",place:"A QR sticker pasted over a poster",what:"A fake sticker placed over the real QR code leads you to a bad website.",fix:"Check whether the sticker was pasted over. Check the URL after scanning."},
+voice:{name:"Fake voice (voice cloning)",place:"A call with a voice just like your family's",what:"A new trick: AI copies a voice and says \"I need money now!\" to rush you.",fix:"Agree on a family secret word. First call back the person's real number."}}
+}};
+
+const THREATS=[
+{id:'phish',e:'🎣',x:205,y:46,r:'eu',u:'high'},{id:'malware',e:'🦠',x:312,y:44,r:'as',u:'mid'},
+{id:'pass',e:'🔑',x:68,y:58,r:'na',u:'high'},{id:'mfa',e:'📱',x:112,y:128,r:'sa',u:'mid'},
+{id:'wifi',e:'📶',x:222,y:100,r:'af',u:'mid'},{id:'ransom',e:'🔒',x:268,y:60,r:'as',u:'high'},
+{id:'update',e:'🧩',x:345,y:148,r:'oc',u:'mid'},{id:'sms',e:'💬',x:348,y:72,r:'as',u:'high'},
+{id:'usb',e:'🔌',x:100,y:86,r:'na',u:'low'},{id:'social',e:'🎭',x:212,y:138,r:'af',u:'mid'},
+{id:'qr',e:'🔳',x:300,y:86,r:'as',u:'low'},{id:'voice',e:'🎙️',x:110,y:168,r:'sa',u:'high'}];
+const HOME={x:34,y:196};
+const STARTS={home:HOME,na:{x:75,y:72},sa:{x:112,y:150},eu:{x:210,y:50},af:{x:220,y:115},as:{x:310,y:68},oc:{x:345,y:148}};
+const STK=[{k:'band',e:'🧣',lv:1},{k:'gl',e:'🕶️',lv:2},{k:'cape',e:'🦸',lv:3},{k:'head',e:'🎧',lv:4},{k:'crown',e:'👑',lv:5}];
+const KEY='gdd-state-v1';
+const $=s=>document.querySelector(s);
+let lang='en',S,running=false,pending=null,busy=false,last=null,timer=null,bub={k:'bStart',p:{}},dog={x:HOME.x,y:HOME.y},selZ=null,tab='patrol',resetArm=false,toastT=null;
+
+function pickLang(){
+  if(window.APP_LANG==='ja'||window.APP_LANG==='en')return window.APP_LANG;
+  try{const q=new URLSearchParams(location.search).get('lang');if(q==='ja'||q==='en')return q}catch(e){}
+  try{const s=localStorage.getItem('lang');if(s==='ja'||s==='en')return s}catch(e){}
+  return 'en';
+}
+function load(){
+  const d={xp:0,st:{},news:0,diary:[],start:'home'};
+  try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);return Object.assign(d,o)}}catch(e){}
+  return d;
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const L=()=>I18N[lang];
+function t(k,p){let s=L()[k];if(s==null)return k;if(p)for(const x in p)s=s.split('{'+x+'}').join(p[x]);return s}
+const stOf=id=>S.st[id]||'new';
+const level=()=>Math.min(5,1+Math.floor(S.xp/60));
+const pos=p=>`left:${p.x/4}%;top:${p.y/2.2}%`;
+const THR=id=>THREATS.find(x=>x.id===id);
+const urgKey=u=>u==='high'?'urgHigh':u==='mid'?'urgMid':'urgLow';
+
+function applyLang(){
+  document.documentElement.lang=lang;document.title=t('title');
+  document.querySelectorAll('[data-i18n]').forEach(n=>n.textContent=t(n.dataset.i18n));
+  document.querySelectorAll('[data-i18n-aria]').forEach(n=>n.setAttribute('aria-label',t(n.dataset.i18nAria)));
+  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
+  const sel=$('#startSel');
+  sel.innerHTML=`<option value="home">${t('startHome')}</option>`+Object.keys(L().reg).map(k=>`<option value="${k}">${L().reg[k]}</option>`).join('');
+  sel.value=S.start;
+  $('#btnReset').textContent=resetArm?t('resetAsk'):t('reset');
+  renderAll();
+}
+function setLang(l){lang=l;try{localStorage.setItem('lang',l)}catch(e){}applyLang()}
+
+function renderAll(){renderStat();renderDots();renderDog();renderBubble();renderReport();renderControls();renderNews();renderZukan();renderPochi();renderTabs()}
+function renderTabs(){
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='view-'+tab));
+}
+function xpInfo(){
+  const lv=level();
+  if(lv>=5)return{pct:100,txt:t('xpMax')};
+  const need=lv*60;return{pct:Math.round((S.xp-(lv-1)*60)/60*100),txt:t('xpLeft',{n:need-S.xp})+' ・ '+S.xp+' XP'};
+}
+function renderStat(){
+  const lv=level(),x=xpInfo();
+  $('#lvChip').textContent=t('lv',{n:lv})+' '+L().lvTitle[lv-1];
+  $('#xpFill').style.width=x.pct+'%';$('#xpText').textContent=x.txt;
+  const n=THREATS.filter(h=>stOf(h.id)!=='new').length;
+  $('#zCount').textContent=t('zCount',{a:n,b:THREATS.length});
+  $('#dogE').textContent='🐶';
+}
+function renderDots(){
+  $('#dots').innerHTML=THREATS.map((h,i)=>{
+    const s=stOf(h.id),nm=s==='new'?t('unknown'):L().th[h.id].name;
+    const bd=s==='fix'?'<i class="bd">✓</i>':s==='watch'?'<i class="bd">⏳</i>':'';
+    return `<button class="dot ${s}${pending===h.id?' sel':''}" style="${pos(h)};--r:${(i%5-2)*5}deg" data-id="${h.id}" data-demo="map-dot-${h.id}" aria-label="${nm}">${s==='new'?'❓':h.e}${bd}</button>`}).join('');
+}
+function renderDog(){const d=$('#dog');d.style.left=dog.x/4+'%';d.style.top=dog.y/2.2+'%';d.classList.toggle('run',busy)}
+function renderBubble(){
+  const p=Object.assign({},bub.p);if(p.r)p.place=L().reg[p.r];
+  $('#bubble').textContent=t(bub.k,p);
+}
+function setBubble(k,p){bub={k,p:p||{}};renderBubble()}
+function renderControls(){
+  const done=THREATS.every(h=>stOf(h.id)!=='new');
+  const b=$('#btnPatrol');b.disabled=done;
+  b.textContent=done?t('allDone'):running?t('pause'):t('start');
+}
+function renderReport(){
+  const r=$('#report');
+  if(pending){
+    const h=THR(pending),d=L().th[pending];
+    r.innerHTML=`<div class="rhead"><div class="stk">${h.e}</div><div><h2>${t('found',{name:d.name})}</h2><span class="urg u-${h.u}">${t(urgKey(h.u))}</span></div></div>
+    <dl><dt>${t('rWhere')}</dt><dd>${d.place}</dd><dt>${t('rWhy')}</dt><dd>${d.what}</dd><dt>${t('rFix')}</dt><dd>${d.fix}</dd></dl>
+    <div class="btns"><button class="btn primary" data-act="fix" data-demo="act-fix">${t('actFix')}</button><button class="btn" data-act="watch" data-demo="act-watch">${t('actWatch')}</button></div>`;
+  }else if(last){
+    const d=L().th[last.id];
+    r.innerHTML=`<div class="rhead"><div class="stk">${THR(last.id).e}</div><div class="muted">${t('rDone',{name:d.name,status:t(last.act==='fix'?'stFix':'stWatch')})}</div></div>`;
+  }else r.innerHTML=`<div class="muted">${t('rEmpty')}</div>`;
+}
+function renderNews(){
+  const done=S.news>=5;
+  $('#newsText').textContent=done?t('newsDone'):L().news[S.news];
+  const b=$('#btnNews');b.textContent=t('newsBtn');b.disabled=done;
+}
+function dogHTML(lv){
+  let h='🐶<span class="a band">🧣</span>';
+  if(lv>=2)h+='<span class="a gl">🕶️</span>';
+  if(lv>=3)h+='<span class="a cape">🦸</span>';
+  if(lv>=4)h+='<span class="a head">🎧</span>';
+  if(lv>=5)h+='<span class="a crown">👑</span>';
+  return `<div class="dogbig" aria-hidden="true">${h}</div>`;
+}
+function renderPochi(){
+  const lv=level(),x=xpInfo();
+  $('#bigDog').innerHTML=dogHTML(lv);
+  $('#pTitle').textContent=t('pTitle2',{t:L().lvTitle[lv-1]})+' · '+t('lv',{n:lv});
+  $('#pSub').textContent=t('pSub');
+  $('#xpFill2').style.width=x.pct+'%';$('#xpText2').textContent=x.txt;
+  $('#rewards').innerHTML=STK.map(s=>`<div class="${lv>=s.lv?'':'l'}"><span>${s.e}</span>${lv>=s.lv?L().stk[s.k]:t('rwLock',{n:s.lv})}</div>`).join('');
+  $('#rwCount').textContent=t('rwCount',{a:STK.filter(s=>lv>=s.lv).length,b:STK.length});
+  const di=$('#diary');
+  if(!S.diary.length)di.innerHTML=`<li class="muted">${t('dEmpty')}</li>`;
+  else di.innerHTML=S.diary.map(e=>{const d=new Date(e.t),tm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    return `<li><time>${tm}</time>${THR(e.id).e} ${L().th[e.id].name} → ${t(e.act==='fix'?'dFix':'dWatch')}</li>`}).join('');
+}
+function renderZukan(){
+  $('#zgrid').innerHTML=THREATS.map(h=>{
+    const s=stOf(h.id);
+    if(s==='new')return `<button class="slot lock${selZ===h.id?' cur':''}" data-z="${h.id}" data-demo="zukan-${h.id}"><div class="stk">？</div><small>${t('zLockName')}</small></button>`;
+    return `<button class="slot${selZ===h.id?' cur':''}" data-z="${h.id}" data-demo="zukan-${h.id}"><span class="bd">${s==='fix'?'✅':'⏳'}</span><div class="stk">${h.e}</div><small>${L().th[h.id].name}</small></button>`}).join('');
+  const z=$('#zdetail');
+  if(!selZ){z.innerHTML=`<div class="muted">${t('zHint')}</div>`;return}
+  const s=stOf(selZ),h=THR(selZ);
+  if(s==='new'){z.innerHTML=`<div class="muted">🔍 ${t('zLock')}</div>`;return}
+  const d=L().th[selZ];
+  z.innerHTML=`<div class="rhead"><div class="stk">${h.e}</div><div><h2>${d.name}</h2><span class="urg u-${h.u}">${t(urgKey(h.u))}</span> <span class="urg" style="background:#fff;border:1px solid var(--line)">${t(s==='fix'?'stFix':'stWatch')}</span></div></div>
+  <p><b>${t('rWhere')}</b><br>${L().reg[h.r]} — ${d.place}</p><p><b>${t('rWhy')}</b><br>${d.what}</p><p><b>${t('rFix')}</b><br>${d.fix}</p>
+  ${s==='watch'?`<button class="btn primary" data-zfix="${selZ}" data-demo="zukan-fix">${t('zFixNow')}</button>`:''}`;
+}
+
+function toast(msg){const e=$('#toast');e.textContent=msg;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2800)}
+function checkLevel(old){
+  const n=level();
+  if(n>old){const s=STK.find(k=>k.lv===n);setTimeout(()=>toast(t('toastLv',{n,s:L().stk[s.k]})),700)}
+}
+function award(id,act){
+  const prev=stOf(id),old=level();
+  const gain=act==='fix'?(prev==='watch'?20:30):10;
+  S.st[id]=act;S.xp+=gain;
+  S.diary.unshift({id,act,t:Date.now()});S.diary=S.diary.slice(0,30);
+  save();checkLevel(old);return gain;
+}
+
+function tick(){
+  clearTimeout(timer);
+  if(!running||pending||busy)return;
+  const left=THREATS.filter(h=>stOf(h.id)==='new');
+  if(!left.length){running=false;setBubble('bAllDone');renderControls();return}
+  goTo(left[Math.floor(Math.random()*left.length)]);
+}
+function goTo(h){
+  busy=true;last=null;
+  const old={x:dog.x,y:dog.y};
+  dog={x:h.x-13,y:h.y+13};
+  const rt=$('#route');rt.setAttribute('x1',old.x);rt.setAttribute('y1',old.y);rt.setAttribute('x2',dog.x);rt.setAttribute('y2',dog.y);rt.setAttribute('opacity','.8');
+  setBubble('bRun',{r:h.r});renderReport();renderDog();
+  setTimeout(()=>{busy=false;pending=h.id;setBubble('bFound');renderDots();renderDog();renderReport();
+    const r=$('#report');r.classList.remove('alert');void r.offsetWidth;r.classList.add('alert');
+    if(tab!=='patrol'){toast('🐶 '+t('bFound'))}},1900);
+}
+function choose(act){
+  if(!pending)return;
+  const id=pending;pending=null;
+  const gain=award(id,act);last={id,act};
+  setBubble(act==='fix'?'bFixed':THR(id).u==='high'?'bWatchHigh':'bWatchLow',{xp:gain});
+  $('#route').setAttribute('opacity','0');
+  renderAll();
+  if(running){clearTimeout(timer);timer=setTimeout(tick,2800)}
+}
+
+document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;renderTabs()}));
+$('#btnPatrol').addEventListener('click',()=>{
+  running=!running;
+  if(running){setBubble('bStart',{});bub={k:'bFound',p:{}};if(pending)renderBubble();else{tick()}}
+  else{clearTimeout(timer);if(!busy&&!pending)setBubble('bPaused')}
+  renderControls();
+});
+$('#startSel').addEventListener('change',e=>{
+  S.start=e.target.value;save();
+  if(busy||pending)return;
+  dog={x:STARTS[S.start].x,y:STARTS[S.start].y};$('#route').setAttribute('opacity','0');renderDog();
+  setBubble('bTeleport',S.start==='home'?{place:t('startHome')}:{r:S.start});
+  if(S.start==='home')bub.p={place:t('startHome')};renderBubble();
+});
+$('#dots').addEventListener('click',e=>{
+  const b=e.target.closest('.dot');if(!b)return;
+  if(busy){setBubble('bBusy');return}
+  if(pending){setBubble('bFirst');return}
+  const h=THR(b.dataset.id);
+  if(stOf(h.id)==='new')goTo(h);
+  else{selZ=h.id;tab='zukan';renderAll()}
+});
+$('#report').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b)choose(b.dataset.act)});
+$('#zgrid').addEventListener('click',e=>{const b=e.target.closest('[data-z]');if(b){selZ=b.dataset.z;renderZukan()}});
+$('#zdetail').addEventListener('click',e=>{
+  const b=e.target.closest('[data-zfix]');if(!b)return;
+  const gain=award(b.dataset.zfix,'fix');setBubble('bFixed',{xp:gain});toast(t('toastXp',{xp:gain}));renderAll();
+});
+$('#btnNews').addEventListener('click',()=>{
+  if(S.news>=5)return;
+  const old=level();S.xp+=5;S.news++;save();checkLevel(old);
+  setBubble('bNews');toast(t('toastXp',{xp:5}));renderAll();
+});
+$('#btnReset').addEventListener('click',()=>{
+  if(!resetArm){resetArm=true;$('#btnReset').textContent=t('resetAsk');setTimeout(()=>{resetArm=false;$('#btnReset').textContent=t('reset')},3000);return}
+  resetArm=false;S={xp:0,st:{},news:0,diary:[],start:S.start};save();
+  running=false;pending=null;last=null;busy=false;clearTimeout(timer);selZ=null;
+  dog={x:STARTS[S.start].x,y:STARTS[S.start].y};$('#route').setAttribute('opacity','0');
+  setBubble('bStart');toast(t('resetDone'));$('#btnReset').textContent=t('reset');renderAll();
+});
+
+S=load();lang=pickLang();
+if(!STARTS[S.start])S.start='home';
+dog={x:STARTS[S.start].x,y:STARTS[S.start].y};
+applyLang();
+</script>
+</body>
+</html>
